@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { UserData, AnalysisResult } from "../types";
+import type { UserData, AnalysisResult } from "../types";
 
 const INDICATORS_LIST = [
   "Đường Đời", "Sứ Mệnh", "Linh Hồn", "Nhân Cách", "Ngày Sinh", "Thái Độ", 
@@ -41,7 +40,14 @@ QUY TẮC BẮT BUỘC:
 `;
 
 export const analyzeNumerology = async (userData: UserData): Promise<AnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Get API key from environment variables
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Thiếu GEMINI_API_KEY. Hãy đặt VITE_GEMINI_API_KEY trong biến môi trường.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const userQuestion = userData.intention || "Khám phá bản thân và tìm kiếm sự bình an";
   
