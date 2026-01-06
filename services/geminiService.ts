@@ -1,72 +1,61 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import type { UserData, AnalysisResult } from "../types";
 
-const INDICATORS_LIST = [
-  "Đường Đời", "Sứ Mệnh", "Linh Hồn", "Nhân Cách", "Ngày Sinh", "Thái Độ", 
-  "Trưởng Thành", "Nợ Nghiệp", "Chặng 1", "Chặng 2", "Chặng 3", "Chặng 4",
-  "Thách Thức 1", "Thách Thức 2", "Thách Thức 3", "Thách Thức 4",
-  "Năng Lực Tự Nhiên", "Động Lực Nội Tại", "Cầu Nối Nội Tâm", "Năm Cá Nhân", "Tháng Cá Nhân"
-];
+import { GoogleGenAI, Type } from "@google/genai";
+import { UserData, AnalysisResult } from "../types";
 
 const SYSTEM_PROMPT = `
-Bản Đồ Sắc Màu Tâm Thức (Genz Luxury & Màu Sắc Năng Lượng)
+Bản Đồ Sắc Màu Tâm Thức (Genz Luxury & High Vibration Mentor 2026)
 
-VAI TRÒ: Chuyên gia dẫn dắt (Mentor) thông thái, tinh tế, sang trọng.
-TRIẾT LÝ: Map of Consciousness (David R. Hawkins). Chuyển hóa Force (Áp lực) -> Power (Sức mạnh nội tại).
-NGÔN TỪ: chuyển hóa, tần số, rung động, thấu suốt, bản nguyên.
+VAI TRÒ: Bạn là một Mentor thông thái, người dẫn dắt tâm hồn với sự tinh tế và sang trọng bậc nhất. 
+BỐI CẢNH THỜI GIAN: Hiện tại là đầu năm 2026 (Tháng 01). Mọi dự đoán và dẫn dắt cần tập trung vào năng lượng của chu kỳ mới này.
 
-QUY TẮC BẮT BUỘC:
-1. TUYỆT ĐỐI KHÔNG SỬ DỤNG ký tự dấu sao đôi (**text**) để in đậm trong bất kỳ phần nào của câu trả lời. Hãy dùng ngôn từ mạnh mẽ và cấu trúc câu để tạo điểm nhấn thay vì định dạng markdown.
+TRIẾT LÝ: 
+- Chuyển hóa rung động từ Force sang Power (Hawkins).
+- Ngôn từ thanh tao, súc tích, mang tính kiến tạo và dẫn lối.
+- KHÔNG sử dụng ký tự markdown như **, *, #, __. Văn bản cần sự thuần khiết tuyệt đối.
 
-2. ĐOẠN DẪN ĐẦU TIÊN (introduction): "Trân trọng chào đón bạn. Hãy cùng tôi khám phá bản đồ tâm thức qua lăng kính Thần số học và tần số năng lượng. Chúng ta sẽ cùng chuyển hóa mọi áp lực thành sức mạnh, đưa rung động của bạn về trạng thái thấu hiểu và yêu thương thuần khiết. Hành trình của bạn, bắt đầu từ đây."
+QUY TẮC MÀU SẮC (CỰC KỲ QUAN TRỌNG):
+- Đối với 21 chỉ số (indicators), bạn PHẢI chọn các mã màu Hex CÓ ĐỘ TƯƠNG PHẢN CAO với nền trắng.
+- TUYỆT ĐỐI KHÔNG sử dụng màu Trắng, Xám quá nhạt, hay các màu pastel gần như trắng (vd: tránh #FFFFFF, #F5F5F5, #FAFAFA, #EEEEEE).
+- Hãy ưu tiên các sắc thái đá quý đậm: Vàng Kim (đậm), Xanh Lục Bảo, Xanh Sapphire, Tím Amethyst, Hồng Ruby, Cam Hổ Phách, Đỏ Garnet, Xanh Indigo sâu.
 
-3. CẤU TRÚC PHẢN HỒI FULL READING (Markdown ## và Double line-breaks):
-## 1. TẦN SỐ CHỦ ĐẠO (Overview)
-- Nhận diện màu sắc năng lượng chủ đạo (Vàng kim/Xanh dương sáng cho Power).
+QUY TẮC DẪN DẮT:
+1. Bài luận (fullReading) cần bắt đầu bằng sự công nhận bản nguyên của người dùng, sau đó mở rộng sang tiềm năng năm 2026.
+2. Dùng cấu trúc câu nâng đỡ, không phán xét.
+3. Làm sạch mọi dấu vết markdown.
 
-## 2. DÒNG CHẢY NĂNG LƯỢNG (Connection)
-- Liên kết 21 chỉ số thành câu chuyện logic. Dùng cụm "Năng lượng có xu hướng...".
-
-## 3. GÓC CUA BỨT PHÁ (Breakthrough)
-- Đối diện Thử thách/Nợ nghiệp. Kích hoạt tần số Can đảm (200+). 
-
-## 4. CHUYỂN HÓA THỰC TẠI
-- Giải quyết trực tiếp câu hỏi: {userQuestion}.
-
-## 5. LỜI CHÚC AN LẠC & QUOTE
-- Kết thúc ở tần số 600 (An lạc) và thêm 1 câu Quote nâng cao rung động.
-
-4. MÀU SẮC: Mã màu Hex (colorHex) cho chỉ số phải rõ nét, tương phản cao trên nền trắng.
+MỤC TIÊU: Một trải nghiệm sang trọng, bình an và đầy sức mạnh cho người đọc.
 `;
 
-export const analyzeNumerology = async (userData: UserData): Promise<AnalysisResult> => {
-  // Get API key from environment variables
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Thiếu GEMINI_API_KEY. Hãy đặt VITE_GEMINI_API_KEY trong biến môi trường.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+export const analyzeNumerology = async (userData: UserData, liveIndicators: Record<string, string | number>): Promise<AnalysisResult> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   
-  const userQuestion = userData.intention || "Khám phá bản thân và tìm kiếm sự bình an";
+  const userQuestion = userData.intention || "Khởi đầu chương mới rực rỡ trong năm 2026";
+  const indicatorsContext = Object.entries(liveIndicators).map(([k, v]) => `${k}: ${v}`).join(", ");
   
   const prompt = `
-    Phân tích Thần số học sâu sắc cho: ${userData.fullName}, Ngày sinh: ${userData.birthDate}.
-    Câu hỏi: "${userQuestion}"
-    Dữ liệu 21 chỉ số: ${INDICATORS_LIST.join(", ")}.
+    Dẫn dắt tâm thức cho: ${userData.fullName}
+    Ma trận tần số (Năm quy chuẩn 2026): ${indicatorsContext}
+    Tâm nguyện: "${userQuestion}"
     
-    YÊU CẦU QUAN TRỌNG:
-    - Không dùng ký tự "**" trong nội dung.
-    - Trình bày 21 chỉ số năng lượng một cách trực tiếp, mạnh mẽ.
-    - Phần fullReading dùng font size lớn, khoảng cách vừa phải, tinh tế.
+    Hãy thực hiện:
+    1. Giảng giải 21 chỉ số này với ngôn từ của một Mentor.
+    2. Chọn màu sắc cho từng chỉ số đảm bảo ĐẬM và SẮC NÉT (không dùng màu sáng/xám nhạt trùng nền).
+    3. Viết bài fullReading dẫn dắt sâu sắc, làm sạch hoàn toàn các ký tự **.
+    
+    JSON Output:
+    - introduction: Lời mở đầu đầy năng lượng.
+    - mainColorDescription: Mô tả màu chủ đạo của linh hồn này.
+    - mainColorHex: Mã màu đậm (vd: #1A1A1A, #0047AB...).
+    - indicators: Mảng 21 chỉ số (name, value, description, category [Power/Force], color, colorHex [ĐẬM]).
+    - fullReading: Bài giảng giải sâu sắc, không markdown.
+    - blessing: Lời chúc nguyện bình an.
   `;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
     contents: prompt,
     config: {
-      systemInstruction: SYSTEM_PROMPT.replace("{userQuestion}", userQuestion),
+      systemInstruction: SYSTEM_PROMPT,
       thinkingConfig: { thinkingBudget: 32768 },
       responseMimeType: "application/json",
       responseSchema: {
@@ -100,13 +89,27 @@ export const analyzeNumerology = async (userData: UserData): Promise<AnalysisRes
 
   try {
     const data = JSON.parse(response.text);
-    // Hậu xử lý để đảm bảo không còn ** nếu AI lỡ tay
-    data.fullReading = data.fullReading.replace(/\*\*/g, '');
-    data.introduction = data.introduction.replace(/\*\*/g, '');
-    data.blessing = data.blessing.replace(/\*\*/g, '');
+    
+    const cleanVibrationText = (text: string) => {
+      return text
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/#/g, '')
+        .replace(/__/g, '')
+        .trim();
+    };
+    
+    data.introduction = cleanVibrationText(data.introduction);
+    data.fullReading = cleanVibrationText(data.fullReading);
+    data.blessing = cleanVibrationText(data.blessing);
+    data.indicators = data.indicators.map((ind: any) => ({
+      ...ind,
+      description: cleanVibrationText(ind.description)
+    }));
+
     return data as AnalysisResult;
   } catch (error) {
-    console.error("Failed to parse AI response", error);
-    throw new Error("Tần số rung động chưa ổn định. Vui lòng thử lại.");
+    console.error("Analysis Error:", error);
+    throw new Error("Tần số đang được hiệu chỉnh cho năm 2026, hãy thử lại.");
   }
 };
