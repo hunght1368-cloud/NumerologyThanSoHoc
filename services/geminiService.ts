@@ -17,9 +17,23 @@ QUY TẮC:
 2. PHẢI chọn mã màu Hex đậm, tương phản cực tốt trên nền trắng.
 3. Giải thích các chỉ số dựa trên sự rung động và tiềm năng chuyển hóa của linh hồn trong năm 2026.
 `;
+const getApiKey = (): string => {
+  // Try different possible environment variable names
+  const apiKey = 
+    process.env.GEMINI_API_KEY || 
+    process.env.API_KEY || 
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    import.meta.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY không được tìm thấy trong environment variables");
+  }
+  
+  return apiKey;
+};
 
 export const analyzeNumerology = async (userData: UserData, liveIndicators: Record<string, string | number>): Promise<AnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() || "" });
   
   const indicatorsContext = Object.entries(liveIndicators).map(([k, v]) => `${k}: ${v}`).join(", ");
   
