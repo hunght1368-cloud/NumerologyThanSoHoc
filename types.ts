@@ -9,9 +9,9 @@ export interface NumerologyIndicator {
   name: string;
   value: number | string;
   description: string;
-  category: 'Power' | 'Force';
+  category: 'Sức Mạnh' | 'Áp Lực'; // Power vs Force
   color: string;
-  colorHex: string; // Thêm mã hex cho từng chỉ số
+  colorHex: string;
 }
 
 export interface AnalysisResult {
@@ -24,6 +24,6 @@ export interface AnalysisResult {
 }
 
 export enum EnergyLevel {
-  POWER = 'Power',
-  FORCE = 'Force'
+  POWER = 'Sức Mạnh',
+  FORCE = 'Áp Lực'
 }
