@@ -1,11 +1,10 @@
-
 import React, { useState, useMemo } from 'react';
 import { UserData, AnalysisResult } from './types';
 import { analyzeNumerology } from './services/geminiService';
 import LoadingScreen from './components/LoadingScreen';
 import IndicatorCard from './components/IndicatorCard';
 
-// 1. Tiền xử lý tên (Loại bỏ dấu, chuyển hoa, chỉ giữ A-Z)
+// Xử lý tên (Loại bỏ dấu, chuyển hoa, chỉ giữ A-Z)
 const cleanName = (name: string): string => {
   return name
     .normalize('NFD')
@@ -15,7 +14,7 @@ const cleanName = (name: string): string => {
     .replace(/[^A-Z]/g, '');
 };
 
-// 2. Bảng mã Pythagoras
+// Bảng mã Pythagoras
 const getLetterValue = (char: string): number => {
   const map: Record<string, number> = {
     A: 1, J: 1, S: 1, B: 2, K: 2, T: 2, C: 3, L: 3, U: 3,
@@ -25,7 +24,7 @@ const getLetterValue = (char: string): number => {
   return map[char] || 0;
 };
 
-// 3. Hàm rút gọn chuẩn (Giữ Master 11, 22, 33)
+// Hàm rút gọn chuẩn (Giữ Master 11, 22, 33)
 const reduceNumerology = (num: number, keepMaster: boolean = true): { reduced: number; compound: number } => {
   if (num <= 9) return { reduced: num, compound: num };
   let current = num;
@@ -39,9 +38,7 @@ const reduceNumerology = (num: number, keepMaster: boolean = true): { reduced: n
   return { reduced: current, compound: lastCompound };
 };
 
-// 4. Định dạng hiển thị: 
-// - Đường Đời: Chỉ cộng tổng (giữ Master)
-// - Nợ Nghiệp: Định dạng XX/Y
+// Định dạng hiển thị
 const formatValue = (num: number, isLifePath: boolean = false, keepMaster: boolean = true): string => {
   const { reduced, compound } = reduceNumerology(num, keepMaster);
   
@@ -62,6 +59,7 @@ const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'intro' | 'form' | 'result'>('intro');
+  const [error, setError] = useState<string>('');
 
   const liveIndicators = useMemo(() => {
     if (!userData.fullName || !userData.birthDate) return null;
@@ -111,7 +109,7 @@ const App: React.FC = () => {
     const balanceSum = nameParts.reduce((acc, part) => acc + getLetterValue(cleanName(part)[0] || ''), 0);
     insights["Cân Bằng"] = reduceNumerology(balanceSum, true).reduced;
     insights["Tư Duy"] = reduceNumerology(day + expFinal, true).reduced;
-    insights["Năm Cá Nhân"] = reduceNumerology(dR + mR + 1, true).reduced; // Thế giới 2026 = 1
+    insights["Năm Cá Nhân"] = reduceNumerology(dR + mR + 1, true).reduced;
 
     return { core, timeline, insights };
   }, [userData.fullName, userData.birthDate]);
@@ -121,7 +119,10 @@ const App: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userData.fullName || !userData.birthDate || !liveIndicators) return;
+    
     setLoading(true);
+    setError('');
+    
     try {
       const flatIndicators: Record<string, string | number> = {
         ...liveIndicators.core,
@@ -135,12 +136,15 @@ const App: React.FC = () => {
         "Chặng 4": liveIndicators.timeline[3].pinnacle,
         "Thách Thức 4": liveIndicators.timeline[3].challenge,
       };
+      
       const result = await analyzeNumerology(userData, flatIndicators);
       setAnalysis(result);
       setStep('result');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-      alert("Kết nối tần số bị gián đoạn. Hãy thử lại.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Kết nối tần số bị gián đoạn. Hãy thử lại.";
+      setError(errorMessage);
+      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
@@ -169,10 +173,16 @@ const App: React.FC = () => {
 
       {step === 'form' && (
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-white fade-in">
-          {/* Cột Trái - Sticky Form */}
           <div className="lg:col-span-4 flex flex-col items-center justify-center py-20 px-10 border-r border-gray-50 bg-white lg:sticky lg:top-0 lg:h-screen overflow-y-auto">
             <div className="w-full max-w-sm">
               <h2 className="text-[10px] tracking-[0.6em] uppercase text-gray-400 mb-16 font-black">Thông tin định chuẩn</h2>
+              
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-10">
                 <div className="space-y-4">
                   <label className="text-[9px] uppercase tracking-[0.4em] text-gray-400 font-black block">Danh xưng đầy đủ</label>
@@ -193,7 +203,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Cột Phải - Ma trận (Đã sửa lỗi cuộn) */}
           <div className="lg:col-span-8 bg-white p-8 lg:p-16 relative">
             <div className="mb-10 flex justify-between items-center border-b border-gray-50 pb-8">
                <div className="space-y-1">
@@ -204,7 +213,6 @@ const App: React.FC = () => {
 
             {liveIndicators ? (
               <div className="space-y-14 animate-fadeIn pb-20">
-                {/* Chỉ số Cốt Lõi */}
                 <div>
                   <h3 className="text-[9px] tracking-[0.4em] uppercase text-gray-300 font-black mb-6">Chỉ số Cốt lõi</h3>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -217,7 +225,6 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Hành Trình & Thách Thức - GỘP CỰC GỌN */}
                 <div>
                   <h3 className="text-[9px] tracking-[0.4em] uppercase text-gray-300 font-black mb-6">Hành Trình & Thử Thách</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -237,7 +244,6 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Phụ trợ Insights */}
                 <div>
                   <h3 className="text-[9px] tracking-[0.4em] uppercase text-gray-300 font-black mb-6">Thấu suốt bổ trợ</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
