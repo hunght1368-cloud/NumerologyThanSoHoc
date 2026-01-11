@@ -1,3 +1,27 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+dist-ssr
+
+# Environment variables - QUAN TRỌNG: KHÔNG commit các file này
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Vercel
+.vercel
+
 # Logs
 logs
 *.log
@@ -6,11 +30,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +41,17 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cache
+.cache
+.parcel-cache
+.eslintcache
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# OS
+Thumbs.db
